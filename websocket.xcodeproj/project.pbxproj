@@ -6,6 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA41E0932DA291B8000D4D4F /* Hummingbird in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E0922DA291B8000D4D4F /* Hummingbird */; };
+		AA41E0952DA291B8000D4D4F /* HummingbirdCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E0942DA291B8000D4D4F /* HummingbirdCore */; };
+		AA41E0972DA291B8000D4D4F /* HummingbirdHTTP2 in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E0962DA291B8000D4D4F /* HummingbirdHTTP2 */; };
+		AA41E0992DA291B8000D4D4F /* HummingbirdRouter in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E0982DA291B8000D4D4F /* HummingbirdRouter */; };
+		AA41E09B2DA291B8000D4D4F /* HummingbirdTLS in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E09A2DA291B8000D4D4F /* HummingbirdTLS */; };
+		AA41E09E2DA291EF000D4D4F /* HummingbirdWSClient in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E09D2DA291EF000D4D4F /* HummingbirdWSClient */; };
+		AA41E0A02DA291EF000D4D4F /* HummingbirdWSCompression in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E09F2DA291EF000D4D4F /* HummingbirdWSCompression */; };
+		AA41E0A22DA291EF000D4D4F /* HummingbirdWebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = AA41E0A12DA291EF000D4D4F /* HummingbirdWebSocket */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AA41E0752DA28E6F000D4D4F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +63,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA41E09E2DA291EF000D4D4F /* HummingbirdWSClient in Frameworks */,
+				AA41E0A22DA291EF000D4D4F /* HummingbirdWebSocket in Frameworks */,
+				AA41E0992DA291B8000D4D4F /* HummingbirdRouter in Frameworks */,
+				AA41E0952DA291B8000D4D4F /* HummingbirdCore in Frameworks */,
+				AA41E0972DA291B8000D4D4F /* HummingbirdHTTP2 in Frameworks */,
+				AA41E0932DA291B8000D4D4F /* Hummingbird in Frameworks */,
+				AA41E09B2DA291B8000D4D4F /* HummingbirdTLS in Frameworks */,
+				AA41E0A02DA291EF000D4D4F /* HummingbirdWSCompression in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +131,14 @@
 			);
 			name = websocket;
 			packageProductDependencies = (
+				AA41E0922DA291B8000D4D4F /* Hummingbird */,
+				AA41E0942DA291B8000D4D4F /* HummingbirdCore */,
+				AA41E0962DA291B8000D4D4F /* HummingbirdHTTP2 */,
+				AA41E0982DA291B8000D4D4F /* HummingbirdRouter */,
+				AA41E09A2DA291B8000D4D4F /* HummingbirdTLS */,
+				AA41E09D2DA291EF000D4D4F /* HummingbirdWSClient */,
+				AA41E09F2DA291EF000D4D4F /* HummingbirdWSCompression */,
+				AA41E0A12DA291EF000D4D4F /* HummingbirdWebSocket */,
 			);
 			productName = websocket;
 			productReference = AA41E0612DA28E6D000D4D4F /* websocket.app */;
@@ -195,6 +222,10 @@
 			);
 			mainGroup = AA41E0582DA28E6D000D4D4F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */,
+				AA41E09C2DA291EF000D4D4F /* XCRemoteSwiftPackageReference "hummingbird-websocket" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA41E0622DA28E6D000D4D4F /* Products */;
 			projectDirPath = "";
@@ -551,6 +582,68 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hummingbird-project/hummingbird.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.11.0;
+			};
+		};
+		AA41E09C2DA291EF000D4D4F /* XCRemoteSwiftPackageReference "hummingbird-websocket" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hummingbird-project/hummingbird-websocket.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA41E0922DA291B8000D4D4F /* Hummingbird */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */;
+			productName = Hummingbird;
+		};
+		AA41E0942DA291B8000D4D4F /* HummingbirdCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */;
+			productName = HummingbirdCore;
+		};
+		AA41E0962DA291B8000D4D4F /* HummingbirdHTTP2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */;
+			productName = HummingbirdHTTP2;
+		};
+		AA41E0982DA291B8000D4D4F /* HummingbirdRouter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */;
+			productName = HummingbirdRouter;
+		};
+		AA41E09A2DA291B8000D4D4F /* HummingbirdTLS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E0912DA291B8000D4D4F /* XCRemoteSwiftPackageReference "hummingbird" */;
+			productName = HummingbirdTLS;
+		};
+		AA41E09D2DA291EF000D4D4F /* HummingbirdWSClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E09C2DA291EF000D4D4F /* XCRemoteSwiftPackageReference "hummingbird-websocket" */;
+			productName = HummingbirdWSClient;
+		};
+		AA41E09F2DA291EF000D4D4F /* HummingbirdWSCompression */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E09C2DA291EF000D4D4F /* XCRemoteSwiftPackageReference "hummingbird-websocket" */;
+			productName = HummingbirdWSCompression;
+		};
+		AA41E0A12DA291EF000D4D4F /* HummingbirdWebSocket */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA41E09C2DA291EF000D4D4F /* XCRemoteSwiftPackageReference "hummingbird-websocket" */;
+			productName = HummingbirdWebSocket;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA41E0592DA28E6D000D4D4F /* Project object */;
 }
