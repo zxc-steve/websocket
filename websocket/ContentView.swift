@@ -41,6 +41,11 @@ struct ContentView: View {
                         Label("Add Item", systemImage: "plus")
                     }
                 }
+                /*ToolbarItem {
+                    Button(action: {modelContext.delete(item)}) {
+                        Label("Delete Item", systemImage: "trash")
+                    }
+                }*/
                 ToolbarItem {
                     Button(action: sendMessageTask) {
                         Label("send messages", systemImage: "square.and.arrow.up")
@@ -174,8 +179,10 @@ extension ContentView {
         //let urlSession = URLSession(configuration: .default)
         //let webSocketTask = urlSession.webSocketTask(with: url)
         webSocketTask.resume()
-        let messages = Array(0...10)
-            .map{URLSessionWebSocketTask.Message.string(username+String($0))}
+        let messages = Array(0...99)
+            .map{URLSessionWebSocketTask.Message.string(
+                ItemCodable(Item(.now,String($0) )).json())}
+            //.map{URLSessionWebSocketTask.Message.string(username+String($0))}
         for message in messages {
             webSocketTask.send(message) { error in
                 if let error = error {
@@ -188,7 +195,8 @@ extension ContentView {
             switch message {
             case .string(let text):
                 print("\(username) Received text message: \(text)")
-                modelContext.insert(Item(Date(),text))
+                //modelContext.insert(Item(Date(),text))
+                modelContext.insert(ItemCodable.item(text))
             case .data(let data):
                 print("Received binary message: \(data)")
             @unknown default:
