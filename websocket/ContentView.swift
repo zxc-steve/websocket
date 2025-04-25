@@ -11,83 +11,77 @@ import SwiftData
 typealias WSmessage = URLSessionWebSocketTask.Message
 var msg_cnt = 0
 let urlSession = URLSession(configuration: .default)
-let url_1 = URL(string: "ws://localhost:8080/chat?username=U1")!
-let url_2 = URL(string: "ws://localhost:8080/chat?username=U2")!
+let url_1 = URL(string: "ws://localhost:8080/chat?username=Z1")!
+let url_2 = URL(string: "ws://localhost:8080/chat?username=Z2")!
+let url_3 = URL(string: "ws://localhost:8080/chat?username=Z3")!
 
 struct ContentView: View {
+   // @Environment(\.modelContext) private var modelContext
+   // @Query private var items: [Item]
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-    @State var message = ""
+    @Query(sort: \ChatUser.name)  private var users: [ChatUser]
+    @Query(sort: \ChatGroup.createTime)  private var groups: [ChatGroup]
+    @Query(sort: \ChatMessage.createTime)  private var messages: [ChatMessage]
 
-    let webSocketTask1 = urlSession.webSocketTask(with: url_1)
-    let webSocketTask2 = urlSession.webSocketTask(with: url_2)
+    @State var startTime = ""
+
+    let webSocketUser1 = urlSession.webSocketTask(with: url_1)
+    let webSocketUser2 = urlSession.webSocketTask(with: url_2)
+    let webSocketUser3 = urlSession.webSocketTask(with: url_3)
 
     
     var body: some View {
          NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                        Text(item.message)
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                        Text(item.message)
-                    }
-                }
-            }.toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-                /*ToolbarItem {
-                    Button(action: {modelContext.delete(item)}) {
-                        Label("Delete Item", systemImage: "trash")
-                    }
-                }*/
-                ToolbarItem {
-                    Button(action: sendMessageTask) {
-                        Label("send messages", systemImage: "square.and.arrow.up")
-                    }
-                }
-            }
-
+             List {
+                 Section("user"){
+                     ForEach(users) { user in
+                         NavigationLink {
+                             ChatUserDetail(user: user)
+                             //TextField("new name", text: Bindable(user).name)
+                         } label: {
+                             Text(user.name)
+                         }
+                     }
+                     //.onDelete(perform: deleteUsers(offsets:))
+                 }
+                 Section("group"){
+                     ForEach(groups) { group in
+                         NavigationLink {
+                             ChatGroupDetail(group: group)
+                         } label: {
+                             Text(group.name)
+                         }
+                     }
+                 }
+                 Section("message"){
+                     ForEach(messages) { message in
+                         NavigationLink {
+                             ChatMessageDetail(message: message)
+                         } label: {
+                             Text(message.message)
+                         }
+                     }
+                 }
+             }
 
         } detail: {
             Text("Select an item")
-            Text("websocket server at \(message)")
-            Text("total  message count = \(items.count)")
+            Text("websocket server at \(startTime)")
+            Text("total  message count = \(messages.count)")
             Button("Send message to WS"){
                 sendMessageTask()            }
         }
         .task{
-            message = date2string()
-
+            startTime = date2string()
             await WSserver()
-        }
-    }
-    private func sendMessageTask() {
-        Task{ await sendMesssage(webSocketTask1,"XX")}
-        Task{ await sendMesssage(webSocketTask2,"YY")}
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(Date(),"Msg-\(msg_cnt)")
-            msg_cnt += 1
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+        }.toolbar {
+            ToolbarItem {
+                Button(action: sendMessageTask) {
+                    Label("send messages", systemImage: "square.and.arrow.up")
+                }
             }
         }
     }
-     
 }
 func WSserver()async{
     /*let hostname: String = "127.0.0.1"
@@ -103,7 +97,6 @@ func WSserver()async{
         try await app.runService()
     }
     try! await run()*/
-
     try! await buildApplication().runService()
 }
 func date2string()->String{
@@ -111,49 +104,14 @@ func date2string()->String{
     let formatter3 = DateFormatter()
     formatter3.dateFormat = "HH:mm E, d MMM y"
     return formatter3.string(from: today)
-
-}
-func sendMesssage2(username:String) async{
-    let url = URL(string: "ws://localhost:8080/chat?username=\(username)")!
-    let urlSession = URLSession(configuration: .default)
-    let webSocketTask = urlSession.webSocketTask(with: url)
-    webSocketTask.resume()
-    let messages = Array(0...3)
-        .map{URLSessionWebSocketTask.Message.string(username+String($0))}
-    for message in messages {
-        webSocketTask.send(message) { error in
-            if let error = error {
-                print("WebSocket sending error: \(error)")
-            }
-        }
-    }
-    for _ in 0...110{
-        webSocketTask.receive { result in
-            switch result {
-            case .failure(let error):
-                print("Failed to receive message: \(error)")
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    print("\(username) Received text message: \(text)")
-                case .data(let data):
-                    print("Received binary message: \(data)")
-                @unknown default:
-                    fatalError()
-                }
-            }
-        }
-
-    }
-    try! await Task.sleep(nanoseconds: 10_000_000_000)
 }
 
 func WSmessageReceive(_ webSocketTask:URLSessionWebSocketTask) -> AsyncStream<String>{
     AsyncStream { () in
-              /*  guard let self else {
-                    // Self is gone, return nil to end the stream
-                    return nil
-                }*/
+        /*  guard let self else {
+         // Self is gone, return nil to end the stream
+         return nil
+         }*/
         var result : String = ""
         let message = try! await webSocketTask.receive()
         switch message {
@@ -165,24 +123,36 @@ func WSmessageReceive(_ webSocketTask:URLSessionWebSocketTask) -> AsyncStream<St
         @unknown default:
             fatalError("\(#function)")
         }
-
-
-                // End the stream (by returning nil) if the calling Task was canceled
-                return Task.isCancelled ? nil : result
-            }
-
+        // End the stream (by returning nil) if the calling Task was canceled
+        return Task.isCancelled ? nil : result
+    }
 }
 extension ContentView {
+    private func sendMessageTask() {
+        Task{ await sendMesssage(webSocketUser1,"Z1")}
+        /*Task{ //await try! Task.sleep(nanoseconds: 2_000_000_000)
+            await sendMesssage(webSocketUser2,"Z2")
+        }
+        Task{ await sendMesssage(webSocketUser3,"Z3")}*/
+    }
     func sendMesssage(_ webSocketTask:URLSessionWebSocketTask,
                       _ username:String) async{
-        //let url = URL(string: "ws://localhost:8080/chat?username=\(username)")!
-        //let urlSession = URLSession(configuration: .default)
-        //let webSocketTask = urlSession.webSocketTask(with: url)
+        let chatUsers = [ChatUser("Y0"),ChatUser("Y1"),ChatUser("Y2"),]
+        let chatMessages = [ChatMessage("X0"),ChatMessage("X1"),ChatMessage("X2"),]
+        for i in 0...2 {
+            modelContext.insert(chatUsers[i])
+            modelContext.insert(chatMessages[i])
+        }
+        chatMessages[0].from = chatUsers[0]
+        chatMessages[1].from = chatUsers[1]
+        chatMessages[2].from = chatUsers[2]
+        
         webSocketTask.resume()
-        let messages = Array(0...99)
+        let messages = Array(0...2)
             .map{URLSessionWebSocketTask.Message.string(
-                ItemCodable(Item(.now,String($0) )).json())}
-            //.map{URLSessionWebSocketTask.Message.string(username+String($0))}
+                getChatModelJson(chatMessages[$0])
+            )}
+
         for message in messages {
             webSocketTask.send(message) { error in
                 if let error = error {
@@ -191,41 +161,97 @@ extension ContentView {
             }
         }
         while true {
-            let message = try! await webSocketTask.receive()
-            switch message {
+            let WSmessage = try! await webSocketTask.receive()
+            switch WSmessage {
             case .string(let text):
-                print("\(username) Received text message: \(text)")
-                //modelContext.insert(Item(Date(),text))
-                modelContext.insert(ItemCodable.item(text))
+                print("\(username) Received text/json message: \(text)")
+                WSmessageDecode(WSmessage: text)
             case .data(let data):
                 print("Received binary message: \(data)")
             @unknown default:
                 fatalError("\(#function)")
             }
         }
-    }}
-func sendMesssage1() async{
-    let url = URL(string: "ws://localhost:8080/chat?username=Tib")!
-    let task = URLSession.shared.dataTask(with: url) { data, response, error in
-        if let error = error {
-            print(error);print("----  1  -----")
+    }
+    func WSmessageDecode(WSmessage:String){
+        let userAndMessage = /^\[(\w+)]:(.*)/.dotMatchesNewlines(true)
+
+        guard let match = WSmessage.firstMatch(of: userAndMessage)
+        else {
+            modelContext.insert(ChatMessage(WSmessage))
             return
         }
-        guard let httpResponse = response as? HTTPURLResponse,
-            (200...299).contains(httpResponse.statusCode) else {
-            print(response);print("----  2  -----")
-            return
-        }
-        if let mimeType = httpResponse.mimeType, mimeType == "text/html",
-            let data = data,
-            let string = String(data: data, encoding: .utf8) {
-            print("in http response");print("----  3  -----")
-            //DispatchQueue.main.async {
-             //   self.webView.loadHTMLString(string, baseURL: url)
-            //}
+        let userName = String(match.1)
+        let message  = String(match.2)
+        chatModelDecode(message)
+        try! modelContext.save()
+    }
+    func getUser(userName:String)->  ChatUser? { users.first{$0.name==userName}}
+    func getGroup(groupName:String)->ChatGroup?{groups.first{$0.name==groupName}}
+    func upsert(_ messagex:ChatMessagex){
+        let chatMessage = messagex.newChatMessage()
+        modelContext.insert(chatMessage)
+        
+        guard let userName = messagex.from
+        else{ return }
+        /*if let user = getUser(userName: userName) {
+            chatMessage.from = user
+        } else{
+            let newUser = ChatUser(userName); modelContext.insert(newUser)
+            chatMessage.from = newUser
+        }*/
+        // ChatUser.name is unique, so it overwrite the same chatuser
+        let newUser = ChatUser(userName); modelContext.insert(newUser)
+        chatMessage.from = newUser
+
+        
+        guard let groupName = messagex.group
+        else{ return }
+        /*if let group = getGroup(groupName: groupName) {
+            chatMessage.group = group
+        } else{
+            let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
+            chatMessage.group = newGroup
+        }*/
+        let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
+        chatMessage.group = newGroup
+
+    }
+    func upsert(_ userx:ChatUserx){
+        let userName = userx.name
+        let newUser = ChatUser(userName); modelContext.insert(newUser)
+
+        //if let user = getUser(userName: userName) {
+        //    return
+        //} else{
+        //    let newUser = ChatUser(userName); modelContext.insert(newUser)
+        //}
+    }
+    func upsert(_ groupx:ChatGroupx){
+        let groupName = groupx.name
+        let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
+
+        // merge group user, TBD
+        /*if let group = getGroup(groupName: groupName) {
+        } else{
+            let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
+            for user in groupx.users{
+                if let chatUser = getUser(userName: user){
+                    newGroup.users.append(chatUser)
+                }
+            }
+        }*/
+    }
+    func chatModelDecode(_ msg:String){
+        let decoder = JSONDecoder()
+        if let chatMessagex = try? decoder.decode(ChatMessagex.self, from: msg.data(using: .utf8)!){
+            upsert(chatMessagex)
+        } else if let chatUserx = try? decoder.decode(ChatUserx.self, from: msg.data(using: .utf8)!){
+            upsert(chatUserx)
+        } else if let chatGroupx = try? decoder.decode(ChatGroupx.self, from: msg.data(using: .utf8)!){
+            upsert(chatGroupx)
         }
     }
-    task.resume()
 }
 
 #Preview {
