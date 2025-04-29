@@ -4,6 +4,10 @@
 //
 //  Created by steve on 2025/4/6.
 //
+/*
+ https://swiftonserver.com/websockets-tutorial-using-swift-and-hummingbird/
+ https://medium.com/@thomsmed/real-time-with-websockets-and-swift-concurrency-8b44a8808d0d
+ */
 
 import SwiftUI
 import SwiftData

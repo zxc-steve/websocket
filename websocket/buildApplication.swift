@@ -12,6 +12,7 @@ import Logging
 import ServiceLifecycle
 /*
  https://swiftonserver.com/websockets-tutorial-using-swift-and-hummingbird/
+ https://medium.com/@thomsmed/real-time-with-websockets-and-swift-concurrency-8b44a8808d0d
  */
 protocol AppArguments {
     var hostname: String { get }
