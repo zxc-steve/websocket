@@ -10,7 +10,9 @@ import HummingbirdWebSocket
 import HummingbirdWSCompression
 import Logging
 import ServiceLifecycle
-
+/*
+ https://swiftonserver.com/websockets-tutorial-using-swift-and-hummingbird/
+ */
 protocol AppArguments {
     var hostname: String { get }
     var port: Int { get }

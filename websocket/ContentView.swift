@@ -11,23 +11,18 @@ import SwiftData
 typealias WSmessage = URLSessionWebSocketTask.Message
 var msg_cnt = 0
 let urlSession = URLSession(configuration: .default)
-let url_1 = URL(string: "ws://localhost:8080/chat?username=Z1")!
-let url_2 = URL(string: "ws://localhost:8080/chat?username=Z2")!
-let url_3 = URL(string: "ws://localhost:8080/chat?username=Z3")!
+let urls = [URL(string: "ws://localhost:8080/chat?username=X1")!,
+            ]
 
 struct ContentView: View {
-   // @Environment(\.modelContext) private var modelContext
-   // @Query private var items: [Item]
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ChatUser.name)  private var users: [ChatUser]
     @Query(sort: \ChatGroup.createTime)  private var groups: [ChatGroup]
-    @Query(sort: \ChatMessage.createTime)  private var messages: [ChatMessage]
+    @Query(sort: \ChatMessage.message)  private var messages: [ChatMessage]
 
     @State var startTime = ""
 
-    let webSocketUser1 = urlSession.webSocketTask(with: url_1)
-    let webSocketUser2 = urlSession.webSocketTask(with: url_2)
-    let webSocketUser3 = urlSession.webSocketTask(with: url_3)
+    let webSocketTasks = urls.map{urlSession.webSocketTask(with: $0)}
 
     
     var body: some View {
@@ -73,7 +68,7 @@ struct ContentView: View {
         }
         .task{
             startTime = date2string()
-            await WSserver()
+            await webSocketInit()
         }.toolbar {
             ToolbarItem {
                 Button(action: sendMessageTask) {
@@ -105,7 +100,7 @@ func date2string()->String{
     formatter3.dateFormat = "HH:mm E, d MMM y"
     return formatter3.string(from: today)
 }
-
+// This function is not used now ! Convert callback to async stream
 func WSmessageReceive(_ webSocketTask:URLSessionWebSocketTask) -> AsyncStream<String>{
     AsyncStream { () in
         /*  guard let self else {
@@ -128,48 +123,45 @@ func WSmessageReceive(_ webSocketTask:URLSessionWebSocketTask) -> AsyncStream<St
     }
 }
 extension ContentView {
-    private func sendMessageTask() {
-        Task{ await sendMesssage(webSocketUser1,"Z1")}
-        /*Task{ //await try! Task.sleep(nanoseconds: 2_000_000_000)
-            await sendMesssage(webSocketUser2,"Z2")
-        }
-        Task{ await sendMesssage(webSocketUser3,"Z3")}*/
-    }
-    func sendMesssage(_ webSocketTask:URLSessionWebSocketTask,
-                      _ username:String) async{
-        let chatUsers = [ChatUser("Y0"),ChatUser("Y1"),ChatUser("Y2"),]
-        let chatMessages = [ChatMessage("X0"),ChatMessage("X1"),ChatMessage("X2"),]
-        for i in 0...2 {
-            modelContext.insert(chatUsers[i])
-            modelContext.insert(chatMessages[i])
-        }
-        chatMessages[0].from = chatUsers[0]
-        chatMessages[1].from = chatUsers[1]
-        chatMessages[2].from = chatUsers[2]
+    func webSocketInit() async{
         
-        webSocketTask.resume()
-        let messages = Array(0...2)
-            .map{URLSessionWebSocketTask.Message.string(
-                getChatModelJson(chatMessages[$0])
-            )}
+        for (index,webSocketTask) in webSocketTasks.enumerated() {
+            webSocketTask.resume()
+            Task{
+                while true {
+                    let WSmessage = try! await webSocketTask.receive()
+                    switch WSmessage {
+                    case .string(let text):
+                        print("X\(index) Received text message: \(text)")
+                        WSmessageDecode(WSmessage: text)
+                    case .data(let data):
+                        print("Received binary message: \(data)")
+                    @unknown default:
+                        fatalError("\(#function)")
+                    }
+                }
+            }
 
-        for message in messages {
-            webSocketTask.send(message) { error in
+        }
+    }
+
+    private func sendMessageTask() {
+        for (index,webSocketTask) in webSocketTasks.enumerated() {
+            Task{
+                await sendMesssage(webSocketTask)
+            }
+        }
+    }
+    func sendMesssage(_ webSocketTask:URLSessionWebSocketTask) async{
+
+        let sentMessages = messages[0...3]  // first copy query messages to avoid multiple update
+        for message in sentMessages {
+            let jsonString = getChatModelJson(message)
+            let WSmessage  = URLSessionWebSocketTask.Message.string(jsonString)
+            webSocketTask.send(WSmessage) { error in
                 if let error = error {
                     print("WebSocket sending error: \(error)")
                 }
-            }
-        }
-        while true {
-            let WSmessage = try! await webSocketTask.receive()
-            switch WSmessage {
-            case .string(let text):
-                print("\(username) Received text/json message: \(text)")
-                WSmessageDecode(WSmessage: text)
-            case .data(let data):
-                print("Received binary message: \(data)")
-            @unknown default:
-                fatalError("\(#function)")
             }
         }
     }
@@ -188,59 +180,55 @@ extension ContentView {
     }
     func getUser(userName:String)->  ChatUser? { users.first{$0.name==userName}}
     func getGroup(groupName:String)->ChatGroup?{groups.first{$0.name==groupName}}
+    
     func upsert(_ messagex:ChatMessagex){
         let chatMessage = messagex.newChatMessage()
-        modelContext.insert(chatMessage)
-        
-        guard let userName = messagex.from
-        else{ return }
-        /*if let user = getUser(userName: userName) {
-            chatMessage.from = user
-        } else{
-            let newUser = ChatUser(userName); modelContext.insert(newUser)
-            chatMessage.from = newUser
-        }*/
-        // ChatUser.name is unique, so it overwrite the same chatuser
-        let newUser = ChatUser(userName); modelContext.insert(newUser)
-        chatMessage.from = newUser
-
+        modelContext.insert(chatMessage)  // debug concurency
         
         guard let groupName = messagex.group
         else{ return }
-        /*if let group = getGroup(groupName: groupName) {
+        if let group = getGroup(groupName: groupName) {
             chatMessage.group = group
         } else{
             let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
             chatMessage.group = newGroup
-        }*/
-        let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
-        chatMessage.group = newGroup
+        }
+        //let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
+        //chatMessage.group = newGroup
+        
+        guard let userName = messagex.from
+        else{ return }
+        if let user = getUser(userName: userName) {
+            chatMessage.from = user
+        } else{
+            let newUser = ChatUser(userName); modelContext.insert(newUser)
+            chatMessage.from = newUser
+        }
+        
+        // ChatUser.name is unique, so it overwrite the same chatuser
+        // This failed if concurrent upsert the same user/group too often !! 2025/04/28
+        //let newUser = ChatUser(userName); modelContext.insert(newUser)
+        //chatMessage.from = newUser
+
+       // try! modelContext.save()
 
     }
     func upsert(_ userx:ChatUserx){
         let userName = userx.name
-        let newUser = ChatUser(userName); modelContext.insert(newUser)
-
-        //if let user = getUser(userName: userName) {
-        //    return
-        //} else{
-        //    let newUser = ChatUser(userName); modelContext.insert(newUser)
-        //}
+        if let user = getUser(userName: userName) {
+            return
+        } else{
+            let newUser = ChatUser(userName); modelContext.insert(newUser)
+        }
     }
     func upsert(_ groupx:ChatGroupx){
         let groupName = groupx.name
-        let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
-
-        // merge group user, TBD
-        /*if let group = getGroup(groupName: groupName) {
+        if let group = getGroup(groupName: groupName) {
+            // merge group user
         } else{
             let newGroup = ChatGroup(groupName); modelContext.insert(newGroup)
-            for user in groupx.users{
-                if let chatUser = getUser(userName: user){
-                    newGroup.users.append(chatUser)
-                }
-            }
-        }*/
+            // find and copy group user
+        }
     }
     func chatModelDecode(_ msg:String){
         let decoder = JSONDecoder()

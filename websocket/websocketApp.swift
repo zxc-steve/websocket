@@ -19,7 +19,17 @@ struct websocketApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            //return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            var context = container.mainContext
+            let users = try context.fetch(FetchDescriptor<ChatUser>())
+            if  users.count == 0 {
+                SampleData.insertSampleData(context)
+                try context.save()
+            }
+            
+            return container
+
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
@@ -28,6 +38,7 @@ struct websocketApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+            .task{await WSserver()}
             .modelContainer(sharedModelContainer)
 
         }
